@@ -6,15 +6,19 @@ const router = express.Router();
 
 /**
  * GET /candidates/search?query=John
- * Searches candidates by name using Bullhorn QUERY API.
+ * Flexible Bullhorn search using QUERY endpoint.
  */
 router.get("/search", ensureSession, async (req, res) => {
   try {
     const { BhRestToken, restUrl } = req.tokens;
     const query = req.query.query || "John";
 
-    // Query endpoint instead of search
-    const url = `${restUrl.replace(/\/?$/, "/")}query/Candidate?where=firstName LIKE '%${query}%' OR lastName LIKE '%${query}%'&fields=id,firstName,lastName,email&count=20&BhRestToken=${BhRestToken}`;
+    // Try multiple fields to maximise hits
+    const where = encodeURIComponent(
+      `(firstName LIKE '%${query}%' OR lastName LIKE '%${query}%' OR name LIKE '%${query}%')`
+    );
+
+    const url = `${restUrl.replace(/\/?$/, "/")}query/Candidate?where=${where}&fields=id,firstName,lastName,name,email&count=50&BhRestToken=${BhRestToken}`;
 
     const response = await axios.get(url);
     res.json(response.data);
@@ -28,4 +32,5 @@ router.get("/search", ensureSession, async (req, res) => {
 });
 
 export default router;
+
 
