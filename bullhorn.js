@@ -1,5 +1,5 @@
 /****************************************************
- *  STRONG GROUP – UNIFIED BULLHORN ENGINE
+ *  STRONG GROUP – UNIFIED BULLHORN ENGINE (FIXED)
  ****************************************************/
 import axios from "axios";
 import fs from "fs";
@@ -13,9 +13,8 @@ const TOKEN_FILE = "tokens.json";
 
 function loadTokens() {
   try {
-    const data = fs.readFileSync(TOKEN_FILE, "utf-8");
-    return JSON.parse(data);
-  } catch (e) {
+    return JSON.parse(fs.readFileSync(TOKEN_FILE, "utf-8"));
+  } catch {
     return null;
   }
 }
@@ -25,64 +24,55 @@ function saveTokens(tokens) {
 }
 
 /****************************************************
- * BULLHORN AUTH – LOGIN + REFRESH
+ * REFRESH REST TOKEN USING REFRESH TOKEN
  ****************************************************/
-async function loginToBullhorn() {
+async function refreshRestToken(refreshToken) {
   const url = "https://auth.bullhornstaffing.com/oauth/token";
-
-  const body = {
-    grant_type: "password",
-    username: process.env.BH_USERNAME,
-    password: process.env.BH_PASSWORD,
+  const params = {
+    grant_type: "refresh_token",
+    refresh_token: refreshToken,
     client_id: process.env.CLIENT_ID,
     client_secret: process.env.CLIENT_SECRET,
   };
 
-  const response = await axios.post(url, body);
-  return response.data;
-}
-
-async function refreshRestToken(refreshToken) {
-  const url = `https://auth.bullhornstaffing.com/oauth/token?grant_type=refresh_token&refresh_token=${refreshToken}&client_id=${process.env.CLIENT_ID}&client_secret=${process.env.CLIENT_SECRET}`;
-
-  const response = await axios.get(url);
-  return response.data;
+  const { data } = await axios.post(url, null, { params });
+  return data;
 }
 
 /****************************************************
- * MAIN TOKEN MANAGER (called by every route)
+ * MAIN TOKEN MANAGER (CALLED BY EVERY ROUTE)
  ****************************************************/
 export async function getBullhornRestToken() {
   let tokens = loadTokens();
 
-  // FIRST LOGIN — no tokens.json exists
   if (!tokens || !tokens.refreshToken) {
-    console.log("🔐 First login… requesting new Bullhorn tokens");
+    throw new Error("No tokens found. Please run /auth/start first.");
+  }
 
-    const loginData = await loginToBullhorn();
-    const restData = await refreshRestToken(loginData.refresh_token);
+  try {
+    console.log("🔄 Refreshing Bullhorn session…");
+
+    // Step 1: Refresh OAuth token
+    const refreshed = await refreshRestToken(tokens.refreshToken);
+
+    // Step 2: Log into REST services
+    const loginUrl = `https://rest.bullhornstaffing.com/rest-services/login?version=*&access_token=${refreshed.access_token}`;
+    const { data: loginData } = await axios.get(loginUrl);
 
     tokens = {
-      refreshToken: loginData.refresh_token,
-      BhRestToken: restData.BhRestToken,
-      restUrl: restData.restUrl,
+      refreshToken: refreshed.refresh_token,
+      BhRestToken: loginData.BhRestToken,
+      restUrl: loginData.restUrl.endsWith("/")
+        ? loginData.restUrl
+        : loginData.restUrl + "/",
     };
 
     saveTokens(tokens);
     return tokens;
+  } catch (err) {
+    console.error("Token refresh failed:", err.response?.data || err.message);
+    throw new Error("Bullhorn token refresh failed");
   }
-
-  // REFRESH TOKEN
-  console.log("🔄 Refreshing Bullhorn session…");
-
-  const refreshed = await refreshRestToken(tokens.refreshToken);
-
-  tokens.BhRestToken = refreshed.BhRestToken;
-  tokens.restUrl = refreshed.restUrl;
-
-  saveTokens(tokens);
-
-  return tokens;
 }
 
 /****************************************************
@@ -92,55 +82,54 @@ export async function ensureSession(req, res, next) {
   try {
     const tokens = await getBullhornRestToken();
 
-    if (!tokens || !tokens.BhRestToken || !tokens.restUrl) {
+    if (!tokens?.BhRestToken || !tokens?.restUrl) {
       return res.status(401).json({
-        error: "No active Bullhorn session. Run /auth/start first."
+        error: "No active Bullhorn session. Run /auth/start first.",
       });
     }
 
     req.tokens = tokens;
     next();
-
   } catch (err) {
     console.error("Session error:", err);
-    return res.status(500).json({
+    res.status(500).json({
       error: "Failed to ensure Bullhorn session",
-      details: err.message
+      details: err.message,
     });
   }
 }
 
 /****************************************************
- * UNIVERSAL BULLHORN API CALLER  
- * Example: await bullhornGet("entity/Candidate/123");
+ * UNIVERSAL API CALLERS — FIXED URL BUILDER
  ****************************************************/
+function buildUrl(base, path) {
+  return `${base.replace(/\/?$/, "/")}${path}`;
+}
+
 export async function bullhornGet(path, tokens, params = {}) {
-  const url = `${tokens.restUrl}${path}`;
+  const url = buildUrl(tokens.restUrl, path);
   return axios.get(url, {
-    params: {
-      ...params,
-      BhRestToken: tokens.BhRestToken,
-    },
+    params: { ...params, BhRestToken: tokens.BhRestToken },
   });
 }
 
 export async function bullhornPost(path, tokens, payload = {}) {
-  const url = `${tokens.restUrl}${path}?BhRestToken=${tokens.BhRestToken}`;
+  const url = buildUrl(tokens.restUrl, `${path}?BhRestToken=${tokens.BhRestToken}`);
   return axios.post(url, payload);
 }
 
 export async function bullhornPut(path, tokens, payload = {}) {
-  const url = `${tokens.restUrl}${path}?BhRestToken=${tokens.BhRestToken}`;
+  const url = buildUrl(tokens.restUrl, `${path}?BhRestToken=${tokens.BhRestToken}`);
   return axios.put(url, payload);
 }
 
 export async function bullhornDelete(path, tokens) {
-  const url = `${tokens.restUrl}${path}?BhRestToken=${tokens.BhRestToken}`;
+  const url = buildUrl(tokens.restUrl, `${path}?BhRestToken=${tokens.BhRestToken}`);
   return axios.delete(url);
 }
 
 /****************************************************
- * EXPORT DEFAULT (required by old routes)
+ * EXPORT DEFAULT
  ****************************************************/
 export default {
   getBullhornRestToken,
@@ -148,5 +137,5 @@ export default {
   bullhornGet,
   bullhornPost,
   bullhornPut,
-  bullhornDelete
+  bullhornDelete,
 };
