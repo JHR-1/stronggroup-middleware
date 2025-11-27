@@ -1,4 +1,9 @@
 import express from "express";
+const router = express.Router();
+
+// AUTH ROUTES MUST NOT REQUIRE SESSION CHECKS
+
+import express from "express";
 import axios from "axios";
 import dotenv from "dotenv";
 import fs from "fs";

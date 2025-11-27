@@ -1,34 +1,43 @@
 import express from "express";
 import dotenv from "dotenv";
-import { verifyApiKey } from "./routes/authMiddleware.js";  // API Key middleware
-import { ensureSession } from "./bullhorn.js";              // Bullhorn session middleware
 
 // Load env variables
 dotenv.config();
 
+import { verifyApiKey } from "./routes/authMiddleware.js";  // API Key middleware
+import { ensureSession } from "./bullhorn.js";              // Bullhorn session middleware
+
 const app = express();
 app.use(express.json());
 
-// ✅ API KEY PROTECTION — REQUIRED BEFORE ALL ROUTES
+// ---------------------------------------------------------------
+// AUTH ROUTES MUST BE PUBLIC (NO API KEY, NO SESSION REQUIRED)
+// ---------------------------------------------------------------
+import authRoutes from "./routes/authRoutes.js";
+app.use("/auth", authRoutes);
+
+// ---------------------------------------------------------------
+// API KEY PROTECTION — EVERYTHING AFTER AUTH REQUIRES API KEY
+// ---------------------------------------------------------------
 app.use(verifyApiKey);
 
 // ---------------------------------------------------------------
 // HEALTH CHECK ROUTES
 // ---------------------------------------------------------------
-
-// Route required by GPT Builder Actions
 app.get("/ping", (req, res) => {
   res.json({ message: "pong" });
 });
 
-// Internal dev-only ping
 app.get("/__ping", (req, res) => res.send("pong"));
 
 // ---------------------------------------------------------------
-// IMPORT ROUTES
+// BULLHORN SESSION (ONLY FOR PROTECTED ROUTES)
 // ---------------------------------------------------------------
+app.use(ensureSession);
 
-import authRoutes from "./routes/authRoutes.js";
+// ---------------------------------------------------------------
+// IMPORT AND MOUNT OTHER ROUTES
+// ---------------------------------------------------------------
 import commsRoutes from "./routes/commsRoutes.js";
 import candidateRoutes from "./routes/candidateRoutes.js";
 import jobRoutes from "./routes/jobRoutes.js";
@@ -46,11 +55,6 @@ import userRoutes from "./routes/userRoutes.js";
 import webhookRoutes from "./routes/webhookRoutes.js";
 import utilRoutes from "./routes/utilRoutes.js";
 
-// ---------------------------------------------------------------
-// MOUNT ROUTES
-// ---------------------------------------------------------------
-
-app.use("/auth", authRoutes);
 app.use("/comms", commsRoutes);
 app.use("/candidates", candidateRoutes);
 app.use("/jobs", jobRoutes);
@@ -71,11 +75,11 @@ app.use("/utils", utilRoutes);
 // ---------------------------------------------------------------
 // START SERVER
 // ---------------------------------------------------------------
-
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`StrongGroup Middleware running on port ${PORT}`);
 });
+
 
 
 
