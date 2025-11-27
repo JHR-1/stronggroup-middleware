@@ -1,36 +1,51 @@
 import express from "express";
-import axios from "axios";
-import { ensureSession } from "../bullhorn.js";
+import { bullhornGet } from "../bullhorn.js";
 
 const router = express.Router();
 
 /**
+ * Modern Bullhorn Candidate Search
  * GET /candidates/search?query=John
- * Flexible Bullhorn search using QUERY endpoint.
  */
-router.get("/search", ensureSession, async (req, res) => {
+router.get("/search", async (req, res) => {
   try {
-    const { BhRestToken, restUrl } = req.tokens;
-    const query = req.query.query || "John";
+    const query = req.query.query;
 
-    // Try multiple fields to maximise hits
-    const where = encodeURIComponent(
-      `(firstName LIKE '%${query}%' OR lastName LIKE '%${query}%' OR name LIKE '%${query}%')`
+    if (!query) {
+      return res.status(400).json({ error: "Missing ?query param" });
+    }
+
+    const tokens = req.tokens;
+
+    const { data } = await bullhornGet(
+      "search/Candidate",
+      tokens,
+      {
+        query: query,
+        fields: "id,firstName,lastName,email,phone,status",
+        start: 0,
+        count: 20
+      }
     );
 
-    const url = `${restUrl.replace(/\/?$/, "/")}query/Candidate?where=${where}&fields=id,firstName,lastName,name,email&count=50&BhRestToken=${BhRestToken}`;
+    res.json({
+      total: data.total,
+      count: data.count,
+      start: data.start,
+      data: data.data
+    });
 
-    const response = await axios.get(url);
-    res.json(response.data);
   } catch (err) {
-    console.error("Candidate query error:", err.response?.data || err.message);
+    console.error("Candidate search error:", err.response?.data || err.message);
+
     res.status(500).json({
-      error: "Failed to fetch candidates",
-      details: err.response?.data || err.message,
+      error: "Candidate search failed",
+      details: err.response?.data || err.message
     });
   }
 });
 
 export default router;
+
 
 
