@@ -1,28 +1,63 @@
 import express from "express";
+import axios from "axios";
+import dotenv from "dotenv";
+dotenv.config();
+
 const router = express.Router();
 
-// AUTH: START BULLHORN LOGIN
+/****************************************************
+ * 1) /auth/start — Redirect user to Bullhorn
+ ****************************************************/
 router.get("/start", async (req, res) => {
   try {
-    const authUrl = process.env.BH_AUTH_URL; // you already had this logic
-    res.redirect(authUrl);
+    const authUrl =
+      `https://auth.bullhornstaffing.com/oauth/authorize?response_type=code` +
+      `&client_id=${process.env.CLIENT_ID}` +
+      `&redirect_uri=${encodeURIComponent(process.env.REDIRECT_URI)}`;
+
+    return res.redirect(authUrl);
   } catch (err) {
-    console.error("Auth start error:", err);
-    res.status(500).json({ error: "Auth start failed" });
+    console.error("AUTH START ERROR:", err);
+    return res.status(500).json({ error: "Auth start failed", details: err.message });
   }
 });
 
-// AUTH: BULLHORN CALLBACK
+/****************************************************
+ * 2) /auth/callback — Bullhorn redirects here
+ ****************************************************/
 router.get("/callback", async (req, res) => {
+  const { code } = req.query;
+
+  if (!code) {
+    return res.status(400).json({ error: "Missing ?code param in callback" });
+  }
+
   try {
-    // your existing logic for saving tokens goes here
-    res.send("OAuth Success! Tokens stored.");
+    // Exchange code for refresh token + access token
+    const tokenUrl = "https://auth.bullhornstaffing.com/oauth/token";
+
+    const params = {
+      grant_type: "authorization_code",
+      code,
+      client_id: process.env.CLIENT_ID,
+      client_secret: process.env.CLIENT_SECRET,
+      redirect_uri: process.env.REDIRECT_URI,
+    };
+
+    const { data } = await axios.post(tokenUrl, null, { params });
+
+    // Store the refresh token in memory
+    process.env.BH_REFRESH_TOKEN = data.refresh_token;
+
+    console.log("✓ OAuth Success — refresh token received.");
+    return res.send("OAuth Success! Tokens stored.");
   } catch (err) {
-    console.error("Auth callback error:", err);
-    res.status(500).json({ error: "Callback failed" });
+    console.error("CALLBACK ERROR:", err.response?.data || err.message);
+    return res.status(500).json({ error: "Callback failed", details: err.message });
   }
 });
 
 export default router;
+
 
 
