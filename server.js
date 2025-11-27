@@ -1,19 +1,34 @@
 import express from "express";
 import dotenv from "dotenv";
+import { verifyApiKey } from "./routes/authMiddleware.js";  // API Key middleware
+import { ensureSession } from "./bullhorn.js";              // Bullhorn session middleware
 
+// Load env variables
 dotenv.config();
 
 const app = express();
 app.use(express.json());
 
-// Auth
+// ✅ API KEY PROTECTION — REQUIRED BEFORE ALL ROUTES
+app.use(verifyApiKey);
+
+// ---------------------------------------------------------------
+// HEALTH CHECK ROUTES
+// ---------------------------------------------------------------
+
+// Route required by GPT Builder Actions
+app.get("/ping", (req, res) => {
+  res.json({ message: "pong" });
+});
+
+// Internal dev-only ping
+app.get("/__ping", (req, res) => res.send("pong"));
+
+// ---------------------------------------------------------------
+// IMPORT ROUTES
+// ---------------------------------------------------------------
+
 import authRoutes from "./routes/authRoutes.js";
-
-
-// Bullhorn session middleware
-import { ensureSession } from "./bullhorn.js";
-
-// Routes
 import commsRoutes from "./routes/commsRoutes.js";
 import candidateRoutes from "./routes/candidateRoutes.js";
 import jobRoutes from "./routes/jobRoutes.js";
@@ -31,12 +46,9 @@ import userRoutes from "./routes/userRoutes.js";
 import webhookRoutes from "./routes/webhookRoutes.js";
 import utilRoutes from "./routes/utilRoutes.js";
 
-// Mount
-app.get("/__ping", (req, res) => res.send("pong"));
-app.use("/departments", (req, res, next) => {
-  console.log("🔥 HIT /departments middleware");
-  next();
-}, departmentRoutes);
+// ---------------------------------------------------------------
+// MOUNT ROUTES
+// ---------------------------------------------------------------
 
 app.use("/auth", authRoutes);
 app.use("/comms", commsRoutes);
@@ -56,11 +68,16 @@ app.use("/users", userRoutes);
 app.use("/webhooks", webhookRoutes);
 app.use("/utils", utilRoutes);
 
-// Listen
+// ---------------------------------------------------------------
+// START SERVER
+// ---------------------------------------------------------------
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`StrongGroup Middleware running on port ${PORT}`);
 });
+
+
 
 
 
