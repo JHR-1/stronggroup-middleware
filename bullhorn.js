@@ -1,26 +1,36 @@
 /****************************************************
- *  STRONG GROUP – UNIFIED BULLHORN ENGINE (FIXED)
+ *  STRONG GROUP – BULLHORN ENGINE (ENV-BASED TOKENS)
  ****************************************************/
 import axios from "axios";
-import fs from "fs";
 import dotenv from "dotenv";
 dotenv.config();
 
 /****************************************************
- * TOKEN FILE HANDLING
+ * LOAD TOKENS FROM ENV
  ****************************************************/
-const TOKEN_FILE = "tokens.json";
-
 function loadTokens() {
-  try {
-    return JSON.parse(fs.readFileSync(TOKEN_FILE, "utf-8"));
-  } catch {
-    return null;
-  }
+  const refreshToken = process.env.BH_REFRESH_TOKEN;
+  const BhRestToken = process.env.BH_REST_TOKEN;
+  const restUrl = process.env.BH_REST_URL;
+
+  if (!refreshToken) return null;
+
+  return { refreshToken, BhRestToken, restUrl };
 }
 
+/****************************************************
+ * SAVE TOKENS BACK TO ENV (RENDER SAFE METHOD)
+ ****************************************************/
 function saveTokens(tokens) {
-  fs.writeFileSync(TOKEN_FILE, JSON.stringify(tokens, null, 2));
+  // Render does NOT allow dynamic ENV writes at runtime.
+  // BUT we CAN hold the refreshed tokens in process.env 
+  // AND the GPT login flow will re-auth when needed.
+
+  process.env.BH_REFRESH_TOKEN = tokens.refreshToken;
+  process.env.BH_REST_TOKEN = tokens.BhRestToken;
+  process.env.BH_REST_URL = tokens.restUrl;
+
+  console.log("✅ Tokens updated in memory.");
 }
 
 /****************************************************
@@ -28,6 +38,7 @@ function saveTokens(tokens) {
  ****************************************************/
 async function refreshRestToken(refreshToken) {
   const url = "https://auth.bullhornstaffing.com/oauth/token";
+
   const params = {
     grant_type: "refresh_token",
     refresh_token: refreshToken,
@@ -40,7 +51,7 @@ async function refreshRestToken(refreshToken) {
 }
 
 /****************************************************
- * MAIN TOKEN MANAGER (CALLED BY EVERY ROUTE)
+ * MAIN TOKEN MANAGER
  ****************************************************/
 export async function getBullhornRestToken() {
   let tokens = loadTokens();
@@ -52,10 +63,10 @@ export async function getBullhornRestToken() {
   try {
     console.log("🔄 Refreshing Bullhorn session…");
 
-    // Step 1: Refresh OAuth token
+    // Step 1: Refresh OAuth tokens
     const refreshed = await refreshRestToken(tokens.refreshToken);
 
-    // Step 2: Log into REST services
+    // Step 2: Login to Bullhorn REST
     const loginUrl = `https://rest.bullhornstaffing.com/rest-services/login?version=*&access_token=${refreshed.access_token}`;
     const { data: loginData } = await axios.get(loginUrl);
 
@@ -67,7 +78,9 @@ export async function getBullhornRestToken() {
         : loginData.restUrl + "/",
     };
 
+    // Save to memory (Render resets, but session is okay)
     saveTokens(tokens);
+
     return tokens;
   } catch (err) {
     console.error("Token refresh failed:", err.response?.data || err.message);
@@ -76,7 +89,7 @@ export async function getBullhornRestToken() {
 }
 
 /****************************************************
- * EXPRESS MIDDLEWARE — Ensure session is active
+ * EXPRESS MIDDLEWARE
  ****************************************************/
 export async function ensureSession(req, res, next) {
   try {
@@ -91,7 +104,6 @@ export async function ensureSession(req, res, next) {
     req.tokens = tokens;
     next();
   } catch (err) {
-    console.error("Session error:", err);
     res.status(500).json({
       error: "Failed to ensure Bullhorn session",
       details: err.message,
@@ -100,7 +112,7 @@ export async function ensureSession(req, res, next) {
 }
 
 /****************************************************
- * UNIVERSAL API CALLERS — FIXED URL BUILDER
+ * UNIVERSAL REQUEST HELPERS
  ****************************************************/
 function buildUrl(base, path) {
   return `${base.replace(/\/?$/, "/")}${path}`;
@@ -128,9 +140,6 @@ export async function bullhornDelete(path, tokens) {
   return axios.delete(url);
 }
 
-/****************************************************
- * EXPORT DEFAULT
- ****************************************************/
 export default {
   getBullhornRestToken,
   ensureSession,

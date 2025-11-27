@@ -1,43 +1,39 @@
 import express from "express";
 import dotenv from "dotenv";
 
-// Load env variables
 dotenv.config();
 
-import { verifyApiKey } from "./routes/authMiddleware.js";  // API Key middleware
-import { ensureSession } from "./bullhorn.js";              // Bullhorn session middleware
+import { verifyApiKey } from "./routes/authMiddleware.js";
+import { ensureSession } from "./bullhorn.js";
 
 const app = express();
 app.use(express.json());
 
-// ---------------------------------------------------------------
-// AUTH ROUTES MUST BE PUBLIC (NO API KEY, NO SESSION REQUIRED)
-// ---------------------------------------------------------------
+/******************************************************
+ * 1) PUBLIC AUTH ROUTES — MUST COME FIRST
+ ******************************************************/
 import authRoutes from "./routes/authRoutes.js";
-app.use("/auth", authRoutes);
+app.use("/auth", authRoutes);   // NO verifyApiKey, NO ensureSession
 
-// ---------------------------------------------------------------
-// API KEY PROTECTION — EVERYTHING AFTER AUTH REQUIRES API KEY
-// ---------------------------------------------------------------
+/******************************************************
+ * 2) API KEY PROTECTION — EVERYTHING AFTER AUTH IS LOCKED
+ ******************************************************/
 app.use(verifyApiKey);
 
-// ---------------------------------------------------------------
-// HEALTH CHECK ROUTES
-// ---------------------------------------------------------------
-app.get("/ping", (req, res) => {
-  res.json({ message: "pong" });
-});
-
+/******************************************************
+ * 3) PUBLIC HEALTH CHECKS
+ ******************************************************/
+app.get("/ping", (req, res) => res.json({ message: "pong" }));
 app.get("/__ping", (req, res) => res.send("pong"));
 
-// ---------------------------------------------------------------
-// BULLHORN SESSION (ONLY FOR PROTECTED ROUTES)
-// ---------------------------------------------------------------
+/******************************************************
+ * 4) BULLHORN SESSION CHECK
+ ******************************************************/
 app.use(ensureSession);
 
-// ---------------------------------------------------------------
-// IMPORT AND MOUNT OTHER ROUTES
-// ---------------------------------------------------------------
+/******************************************************
+ * 5) ALL OTHER ROUTES
+ ******************************************************/
 import commsRoutes from "./routes/commsRoutes.js";
 import candidateRoutes from "./routes/candidateRoutes.js";
 import jobRoutes from "./routes/jobRoutes.js";
@@ -72,13 +68,12 @@ app.use("/users", userRoutes);
 app.use("/webhooks", webhookRoutes);
 app.use("/utils", utilRoutes);
 
-// ---------------------------------------------------------------
-// START SERVER
-// ---------------------------------------------------------------
+/******************************************************
+ * START SERVER
+ ******************************************************/
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`StrongGroup Middleware running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`StrongGroup Middleware running on ${PORT}`));
+
 
 
 
