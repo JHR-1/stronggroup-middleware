@@ -1,11 +1,7 @@
 import express from "express";
-import {
-  ensureSession,
-  bullhornGet,
-  bullhornPost,
-  bullhornPut,
-  bullhornDelete
-} from "../bullhorn.js";
+import axios from "axios";
+import { ensureSession } from "../bullhorn.js";
+
 
 const router = express.Router();
 

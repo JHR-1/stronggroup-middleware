@@ -1,0 +1,110 @@
+{
+  "entity": "Candidate",
+  "ui_fields": {
+    "header": {
+      "id": { "type": "number" },
+      "firstName": { "type": "string" },
+      "lastName": { "type": "string" },
+      "nickName": { "type": "string" },
+      "homePhone": { "type": "string" },
+      "workPhone": { "type": "string" },
+      "mobilePhone": { "type": "string" }
+    },
+
+    "overview": {
+      "openTasks": { "type": "section" },
+      "resumePreview": { "type": "html" }
+    },
+
+    "details_panel": {
+      "dateAdded": { "type": "datetime" },
+      "address": { "type": "string" },
+      "title": { "type": "string" },
+      "status": { "type": "picklist" },
+      "currentCompany": { "type": "string" },
+      "source": { "type": "string" },
+      "ownership": { "type": "lookup:user" },
+      "email": { "type": "string" },
+      "email2": { "type": "string" },
+      "homePhone_detail": { "type": "string" },
+      "workPhone_detail": { "type": "string" },
+      "mobilePhone_detail": { "type": "string" },
+      "smsOptIn": { "type": "boolean" },
+      "otherPhone": { "type": "string" },
+      "fax": { "type": "string" },
+      "desiredLocations": { "type": "string" },
+      "employmentPreference": { "type": "picklist" },
+      "dateAvailable": { "type": "date" },
+      "category": { "type": "picklist" }
+    },
+
+    "edit_tab": {
+      "availability1": { "type": "date" },
+      "availability2": { "type": "date" },
+      "amPm": { "type": "picklist" },
+
+      "firstName_edit": { "type": "string" },
+      "middleName": { "type": "string" },
+      "lastName_edit": { "type": "string" },
+      "status_edit": { "type": "picklist" },
+      "nickName_edit": { "type": "string" },
+      "title_edit": { "type": "string" },
+      "currentCompany_edit": { "type": "string" },
+      "employeeType": { "type": "picklist" },
+      "source_edit": { "type": "string" },
+      "referredBy": { "type": "lookup:user" },
+      "referredByOther": { "type": "string" },
+      "ownership_edit": { "type": "lookup:user" },
+      "secondaryOwners": { "type": "lookup:user-multi" },
+
+      "email_edit": { "type": "string" },
+      "email2_edit": { "type": "string" },
+      "homePhone_edit": { "type": "string" },
+      "workPhone_edit": { "type": "string" },
+      "mobilePhone_edit": { "type": "string" },
+      "otherPhone_edit": { "type": "string" },
+      "fax_edit": { "type": "string" },
+
+      "address_line": { "type": "string" },
+      "address_line2": { "type": "string" },
+      "address_city": { "type": "string" },
+      "address_state": { "type": "string" },
+      "address_country": { "type": "string" },
+
+      "employmentPreference_edit": { "type": "picklist" },
+      "currentSalary": { "type": "currency" },
+      "desiredSalary": { "type": "currency" },
+      "currentPayRate": { "type": "currency" },
+      "desiredPayRate": { "type": "currency" },
+      "desiredLocations_edit": { "type": "string" },
+      "dateAvailable_edit": { "type": "date" },
+      "willingToRelocate": { "type": "boolean" },
+      "candidateComments": { "type": "string" },
+
+      "category_edit": { "type": "picklist" },
+      "skills": { "type": "picklist-multi" },
+      "additionalSkills": { "type": "string" },
+      "parsedAdditionalSkills": { "type": "string" },
+      "industry": { "type": "string" },
+
+      "resume": { "type": "html" },
+
+      "payrollCompany": { "type": "string" },
+      "linkedinUrl": { "type": "string" }
+    },
+
+    "tabs": [
+      "OVERVIEW",
+      "EDIT",
+      "ACTIVITY",
+      "EMAILS",
+      "NOTES",
+      "WORK HISTORIES",
+      "EDUCATIONS",
+      "REFERENCES",
+      "FILES",
+      "SHORTLISTS",
+      "INTIME SUMMARY"
+    ]
+  }
+}

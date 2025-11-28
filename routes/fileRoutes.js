@@ -1,9 +1,8 @@
 import express from "express";
+import axios from "axios";
 import multer from "multer";
-import {
-  ensureSession,
-  bullhornPost
-} from "../bullhorn.js";
+import { ensureSession } from "../bullhorn.js";
+
 
 const upload = multer({ dest: "uploads/" });
 const router = express.Router();
