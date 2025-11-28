@@ -1,10 +1,11 @@
 import express from "express";
-import { ensureSession } from "../bullhorn.js";   // needed for Bullhorn API access
+import fetch from "node-fetch";     // ✅ REQUIRED FIX
+import { ensureSession } from "../bullhorn.js";
 
 const router = express.Router();
 
 // -------------------------------------------------------------
-// HEALTH CHECK (kept exactly as you had it)
+// HEALTH CHECK
 // -------------------------------------------------------------
 router.get("/health", (req, res) => {
   res.json({ status: "OK", uptime: process.uptime() });
@@ -12,7 +13,6 @@ router.get("/health", (req, res) => {
 
 // -------------------------------------------------------------
 // BULLHORN CANDIDATE METADATA EXTRACTION
-// This route pulls the full system-field metadata for Candidates
 // -------------------------------------------------------------
 router.get("/meta/candidate", ensureSession, async (req, res) => {
   try {
@@ -41,4 +41,7 @@ router.get("/meta/candidate", ensureSession, async (req, res) => {
 });
 
 export default router;
+
+
+
 
