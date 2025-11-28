@@ -50,7 +50,9 @@ import taskRoutes from "./routes/taskRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import webhookRoutes from "./routes/webhookRoutes.js";
 import utilRoutes from "./routes/utilRoutes.js";
+import outlookRoutes from "./routes/outlookRoutes.js";
 
+app.use("/outlook", outlookRoutes);
 app.use("/comms", commsRoutes);
 app.use("/candidates", candidateRoutes);
 app.use("/jobs", jobRoutes);
