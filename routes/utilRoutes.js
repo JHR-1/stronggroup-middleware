@@ -1,6 +1,5 @@
 import express from "express";
-import fetch from "node-fetch";     // ✅ REQUIRED FIX
-import { ensureSession } from "../bullhorn.js";
+import { ensureSession } from "../bullhorn.js";   // needed for Bullhorn API access
 
 const router = express.Router();
 
@@ -41,6 +40,7 @@ router.get("/meta/candidate", ensureSession, async (req, res) => {
 });
 
 export default router;
+
 
 
 
