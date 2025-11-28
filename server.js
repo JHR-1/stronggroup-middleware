@@ -66,7 +66,7 @@ app.use("/submissions", submissionRoutes);
 app.use("/tasks", taskRoutes);
 app.use("/users", userRoutes);
 app.use("/webhooks", webhookRoutes);
-app.use("/utils", utilRoutes);
+app.use("/util", utilRoutes);
 
 /******************************************************
  * START SERVER
