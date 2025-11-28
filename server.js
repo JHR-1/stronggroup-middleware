@@ -16,12 +16,18 @@ import authRoutes from "./routes/authRoutes.js";
 app.use("/auth", authRoutes);   // NO verifyApiKey, NO ensureSession
 
 /******************************************************
- * 2) API KEY PROTECTION — EVERYTHING AFTER AUTH IS LOCKED
+ * 1.5) PUBLIC OUTLOOK ROUTES — MUST COME BEFORE API KEY CHECK
+ ******************************************************/
+import outlookRoutes from "./routes/outlookRoutes.js";
+app.use("/outlook", outlookRoutes);  // PUBLIC — cannot require API key
+
+/******************************************************
+ * 2) API KEY PROTECTION — EVERYTHING AFTER THIS IS LOCKED
  ******************************************************/
 app.use(verifyApiKey);
 
 /******************************************************
- * 3) PUBLIC HEALTH CHECKS
+ * 3) PUBLIC HEALTH CHECKS (SAFE TO KEEP PUBLIC)
  ******************************************************/
 app.get("/ping", (req, res) => res.json({ message: "pong" }));
 app.get("/__ping", (req, res) => res.send("pong"));
@@ -32,7 +38,7 @@ app.get("/__ping", (req, res) => res.send("pong"));
 app.use(ensureSession);
 
 /******************************************************
- * 5) ALL OTHER ROUTES
+ * 5) ALL OTHER ROUTES (PROTECTED)
  ******************************************************/
 import commsRoutes from "./routes/commsRoutes.js";
 import candidateRoutes from "./routes/candidateRoutes.js";
@@ -50,9 +56,7 @@ import taskRoutes from "./routes/taskRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import webhookRoutes from "./routes/webhookRoutes.js";
 import utilRoutes from "./routes/utilRoutes.js";
-import outlookRoutes from "./routes/outlookRoutes.js";
 
-app.use("/outlook", outlookRoutes);
 app.use("/comms", commsRoutes);
 app.use("/candidates", candidateRoutes);
 app.use("/jobs", jobRoutes);
@@ -67,14 +71,8 @@ app.use("/statuses", statusRoutes);
 app.use("/submissions", submissionRoutes);
 app.use("/tasks", taskRoutes);
 app.use("/users", userRoutes);
-app.use("/webhooks", webhookRoutes);
-app.use("/util", utilRoutes);
+app.use("/w
 
-/******************************************************
- * START SERVER
- ******************************************************/
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`StrongGroup Middleware running on ${PORT}`));
 
 
 
