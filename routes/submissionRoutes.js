@@ -1,33 +1,27 @@
 import express from "express";
-import axios from "axios";
-import { ensureSession } from "../bullhorn.js";
-
+import { bullhornPost } from "../bullhorn.js";
 
 const router = express.Router();
 
-/******************************************************
- * CREATE SUBMISSION (CV Send)
- ******************************************************/
-router.post("/create", ensureSession, async (req, res) => {
+router.post("/", async (req, res) => {
   try {
     const tokens = req.tokens;
-    const { candidateId, jobId, status = "Submitted", comments } = req.body;
+    const { candidateId, jobOrderId, status } = req.body;
 
-    const payload = {
+    if (!candidateId || !jobOrderId) {
+      return res.status(400).json({ error: "Missing candidateId or jobOrderId" });
+    }
+
+    const result = await bullhornPost("entity/JobSubmission", tokens, {
       candidate: { id: candidateId },
-      jobOrder: { id: jobId },
-      status,
-      comments
-    };
-
-    const response = await bullhornPut("entity/JobSubmission", tokens, payload);
-
-    res.json({
-      success: true,
-      submissionId: response.data.changedEntityId
+      jobOrder: { id: jobOrderId },
+      status: status || "Submitted"
     });
+
+    res.json({ message: "Submission created", result });
   } catch (err) {
-    res.status(500).json({ error: "Failed to create submission", details: err.response?.data });
+    console.error("Submission error:", err.response?.data || err.message);
+    res.status(500).json({ error: "Failed to create submission" });
   }
 });
 
