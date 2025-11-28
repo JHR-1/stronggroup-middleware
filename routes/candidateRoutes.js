@@ -15,8 +15,6 @@ router.get("/search", async (req, res) => {
     }
 
     const tokens = req.tokens;
-
-    // Split into words for flexible matching
     const parts = raw.trim().split(/\s+/);
 
     let query;
@@ -66,7 +64,50 @@ router.get("/search", async (req, res) => {
   }
 });
 
+
+/**
+ * STRICT SKILL FILTER
+ * GET /candidates/skill?skillId=1234
+ *
+ * Returns ONLY candidates who have the exact Skill entity with the given ID.
+ */
+router.get("/skill", async (req, res) => {
+  try {
+    const skillId = req.query.skillId;
+
+    if (!skillId) {
+      return res.status(400).json({ error: "Missing ?skillId parameter" });
+    }
+
+    const tokens = req.tokens;
+
+    const { data } = await bullhornGet(
+      "query/Candidate",
+      tokens,
+      {
+        where: `skills.id IN (${skillId})`,
+        fields: "id,firstName,lastName,email,phone,status,skills",
+        count: 200
+      }
+    );
+
+    res.json({
+      total: data.total || 0,
+      data: data.data || []
+    });
+
+  } catch (err) {
+    console.error("Strict skill filter error:", err.response?.data || err.message);
+
+    res.status(500).json({
+      error: "Strict skill filter failed",
+      details: err.response?.data || err.message
+    });
+  }
+});
+
 export default router;
+
 
 
 
