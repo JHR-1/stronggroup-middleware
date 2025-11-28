@@ -13,13 +13,13 @@ app.use(express.json());
  * 1) PUBLIC AUTH ROUTES — MUST COME FIRST
  ******************************************************/
 import authRoutes from "./routes/authRoutes.js";
-app.use("/auth", authRoutes);   // NO verifyApiKey, NO ensureSession
+app.use("/auth", authRoutes);   // Public
 
 /******************************************************
- * 1.5) PUBLIC OUTLOOK ROUTES — MUST COME BEFORE API KEY CHECK
+ * 1.5) PUBLIC OUTLOOK ROUTES — MUST BE BEFORE API KEY CHECK
  ******************************************************/
 import outlookRoutes from "./routes/outlookRoutes.js";
-app.use("/outlook", outlookRoutes);  // PUBLIC — cannot require API key
+app.use("/outlook", outlookRoutes);  // Public
 
 /******************************************************
  * 2) API KEY PROTECTION — EVERYTHING AFTER THIS IS LOCKED
@@ -27,7 +27,7 @@ app.use("/outlook", outlookRoutes);  // PUBLIC — cannot require API key
 app.use(verifyApiKey);
 
 /******************************************************
- * 3) PUBLIC HEALTH CHECKS (SAFE TO KEEP PUBLIC)
+ * 3) PUBLIC HEALTH CHECKS
  ******************************************************/
 app.get("/ping", (req, res) => res.json({ message: "pong" }));
 app.get("/__ping", (req, res) => res.send("pong"));
@@ -38,7 +38,7 @@ app.get("/__ping", (req, res) => res.send("pong"));
 app.use(ensureSession);
 
 /******************************************************
- * 5) ALL OTHER ROUTES (PROTECTED)
+ * 5) PROTECTED API ROUTES
  ******************************************************/
 import commsRoutes from "./routes/commsRoutes.js";
 import candidateRoutes from "./routes/candidateRoutes.js";
@@ -71,7 +71,17 @@ app.use("/statuses", statusRoutes);
 app.use("/submissions", submissionRoutes);
 app.use("/tasks", taskRoutes);
 app.use("/users", userRoutes);
-app.use("/w
+app.use("/webhooks", webhookRoutes);
+app.use("/util", utilRoutes);
+
+/******************************************************
+ * START SERVER
+ ******************************************************/
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () =>
+  console.log(`StrongGroup Middleware running on ${PORT}`)
+);
+
 
 
 
